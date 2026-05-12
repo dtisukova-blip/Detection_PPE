@@ -1,0 +1,18 @@
+services:
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ppe-worker
+    network_mode: host
+    environment:
+      WORKER_DB: /data/worker.db
+      WORKER_PKI_DIR: /data/pki
+      WORKER_SERVICE_ID: ${WORKER_SERVICE_ID:-worker-01}
+      WORKER_LOCAL_URL: ${WORKER_LOCAL_URL:-}
+    volumes:
+      - worker-data:/data
+    restart: unless-stopped
+
+volumes:
+  worker-data:

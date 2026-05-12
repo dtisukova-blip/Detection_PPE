@@ -1,0 +1,26 @@
+services:
+  mysql-storage:
+    image: mysql:8.4
+    container_name: ppe-mysql-storage
+    network_mode: host
+    command:
+      - --port=${MYSQL_PORT:-53306}
+      - --mysqlx=0
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-ppe_storage}
+      MYSQL_USER: ${MYSQL_USER:-ppe}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-ppe_change_me}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root_change_me}
+    volumes:
+      - mysql-storage-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -P ${MYSQL_PORT:-53306} -uroot -p${MYSQL_ROOT_PASSWORD:-root_change_me}"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+    restart: unless-stopped
+
+volumes:
+  mysql-storage-data:

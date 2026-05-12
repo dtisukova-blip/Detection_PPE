@@ -1,0 +1,18 @@
+services:
+  delivery-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ppe-delivery-service
+    network_mode: host
+    environment:
+      DELIVERY_DB: /data/delivery.db
+      DELIVERY_PKI_DIR: /data/pki
+      DELIVERY_SERVICE_ID: ${DELIVERY_SERVICE_ID:-delivery-01}
+      DELIVERY_LOCAL_URL: ${DELIVERY_LOCAL_URL:-}
+    volumes:
+      - delivery-data:/data
+    restart: unless-stopped
+
+volumes:
+  delivery-data:

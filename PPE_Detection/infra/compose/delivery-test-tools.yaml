@@ -1,0 +1,12 @@
+services:
+  smtp-test:
+    image: axllent/mailpit:v1.24
+    container_name: ppe-mailpit
+    network_mode: host
+    restart: unless-stopped
+
+  webhook-test:
+    image: mccutchen/go-httpbin:v2.15.0
+    container_name: ppe-webhook-echo
+    network_mode: host
+    restart: unless-stopped

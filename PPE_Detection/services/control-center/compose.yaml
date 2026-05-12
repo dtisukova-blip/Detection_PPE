@@ -1,0 +1,18 @@
+services:
+  control-center:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ppe-control-center
+    network_mode: host
+    environment:
+      CONTROL_CENTER_ROOT_PASSWORD: ${CONTROL_CENTER_ROOT_PASSWORD:-rootroot}
+      CONTROL_CENTER_DB: /data/control_center.db
+      CONTROL_CENTER_PKI_DIR: /data/pki
+      CONTROL_CENTER_TLS_HOSTS: ${CONTROL_CENTER_TLS_HOSTS:-localhost,127.0.0.1}
+    volumes:
+      - control-center-data:/data
+    restart: unless-stopped
+
+volumes:
+  control-center-data:

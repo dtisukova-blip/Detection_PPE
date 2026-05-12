@@ -1,0 +1,198 @@
+services:
+  control-center:
+    build:
+      context: ./services/control-center
+      dockerfile: Dockerfile
+    container_name: ppe-control-center
+    environment:
+      CONTROL_CENTER_ROOT_PASSWORD: ${CONTROL_CENTER_ROOT_PASSWORD:-rootroot}
+      CONTROL_CENTER_DB: /data/control_center.db
+      CONTROL_CENTER_PKI_DIR: /data/pki
+      CONTROL_CENTER_TLS_HOSTS: ${CONTROL_CENTER_TLS_HOSTS:-localhost,127.0.0.1,control-center}
+    ports:
+      - "127.0.0.1:${CONTROL_CENTER_PORT:-8000}:8000"
+      - "127.0.0.1:${CONTROL_CENTER_RUNTIME_PORT:-8443}:8443"
+    volumes:
+      - control-center-data:/data
+    restart: unless-stopped
+    networks:
+      - ppe-net
+
+  worker:
+    build:
+      context: ./services/worker
+      dockerfile: Dockerfile
+    container_name: ppe-worker
+    environment:
+      WORKER_DB: /data/worker.db
+      WORKER_PKI_DIR: /data/pki
+      WORKER_SERVICE_ID: ${WORKER_SERVICE_ID:-worker-01}
+      WORKER_LOCAL_URL: ${WORKER_LOCAL_URL:-https://worker:8010}
+    ports:
+      - "127.0.0.1:${WORKER_PORT:-8010}:8010"
+    volumes:
+      - worker-data:/data
+    restart: unless-stopped
+    networks:
+      - ppe-net
+
+  checkpoint-agent:
+    build:
+      context: ./services/checkpoint-agent
+      dockerfile: Dockerfile
+    container_name: ppe-checkpoint-agent
+    environment:
+      CHECKPOINT_DB: /data/checkpoint.db
+      CHECKPOINT_PKI_DIR: /data/pki
+      CHECKPOINT_SERVICE_ID: ${CHECKPOINT_SERVICE_ID:-checkpoint-01}
+      CHECKPOINT_LOCAL_URL: ${CHECKPOINT_LOCAL_URL:-https://checkpoint-agent:8020}
+    ports:
+      - "127.0.0.1:${CHECKPOINT_PORT:-8020}:8020"
+    volumes:
+      - checkpoint-data:/data
+    restart: unless-stopped
+    networks:
+      - ppe-net
+
+  storage:
+    build:
+      context: ./services/storage-service
+      dockerfile: Dockerfile
+    container_name: ppe-storage
+    environment:
+      STORAGE_DB: /data/storage.db
+      STORAGE_PKI_DIR: /data/pki
+      STORAGE_SERVICE_ID: ${STORAGE_SERVICE_ID:-storage-01}
+      STORAGE_LOCAL_URL: ${STORAGE_LOCAL_URL:-https://storage:8040}
+    ports:
+      - "127.0.0.1:${STORAGE_PORT:-8040}:8040"
+    volumes:
+      - storage-data:/data
+    restart: unless-stopped
+    networks:
+      - ppe-net
+
+  delivery-service:
+    build:
+      context: ./services/delivery-service
+      dockerfile: Dockerfile
+    container_name: ppe-delivery-service
+    environment:
+      DELIVERY_DB: /data/delivery.db
+      DELIVERY_PKI_DIR: /data/pki
+      DELIVERY_SERVICE_ID: ${DELIVERY_SERVICE_ID:-delivery-01}
+      DELIVERY_LOCAL_URL: ${DELIVERY_LOCAL_URL:-https://delivery-service:8030}
+    ports:
+      - "127.0.0.1:${DELIVERY_PORT:-8030}:8030"
+    volumes:
+      - delivery-data:/data
+    restart: unless-stopped
+    networks:
+      - ppe-net
+
+  viewer-service:
+    build:
+      context: ./services/viewer-service
+      dockerfile: Dockerfile
+    container_name: ppe-viewer-service
+    environment:
+      VIEWER_DB: /data/viewer.db
+      VIEWER_PKI_DIR: /data/pki
+      VIEWER_SERVICE_ID: ${VIEWER_SERVICE_ID:-viewer-01}
+      VIEWER_LOCAL_URL: ${VIEWER_LOCAL_URL:-https://viewer-service:8050}
+    ports:
+      - "127.0.0.1:${VIEWER_PORT:-8050}:8050"
+    volumes:
+      - viewer-data:/data
+    restart: unless-stopped
+    networks:
+      - ppe-net
+
+  smtp-test:
+    image: axllent/mailpit:v1.24
+    container_name: ppe-mailpit
+    ports:
+      - "127.0.0.1:${MAILPIT_SMTP_PORT:-1025}:1025"
+      - "127.0.0.1:${MAILPIT_UI_PORT:-8025}:8025"
+    restart: unless-stopped
+    networks:
+      - ppe-net
+
+  webhook-test:
+    image: mccutchen/go-httpbin:v2.15.0
+    container_name: ppe-webhook-echo
+    ports:
+      - "127.0.0.1:${WEBHOOK_TEST_PORT:-8080}:8080"
+    restart: unless-stopped
+    networks:
+      - ppe-net
+
+  postgres-storage:
+    image: postgres:16
+    container_name: ppe-postgres-storage
+    command:
+      - -p
+      - "5432"
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-ppe_storage}
+      POSTGRES_USER: ${POSTGRES_USER:-ppe}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ppe_change_me}
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-55432}:5432"
+    volumes:
+      - postgres-storage-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -p 5432 -U ${POSTGRES_USER:-ppe} -d ${POSTGRES_DB:-ppe_storage}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+    networks:
+      - ppe-net
+
+  mysql-storage:
+    image: mysql:8.4
+    container_name: ppe-mysql-storage
+    command:
+      - --mysqlx=0
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-ppe_storage}
+      MYSQL_USER: ${MYSQL_USER:-ppe}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-ppe_change_me}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root_change_me}
+    ports:
+      - "127.0.0.1:${MYSQL_PORT:-53306}:3306"
+    volumes:
+      - mysql-storage-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -P 3306 -uroot -p${MYSQL_ROOT_PASSWORD:-root_change_me}"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+    restart: unless-stopped
+    networks:
+      - ppe-net
+
+networks:
+  ppe-net:
+    name: ppe-net
+
+volumes:
+  control-center-data:
+    name: control-center_control-center-data
+  worker-data:
+    name: worker_worker-data
+  checkpoint-data:
+    name: checkpoint-agent_checkpoint-data
+  storage-data:
+    name: storage-service_storage-data
+  delivery-data:
+    name: delivery-service_delivery-data
+  viewer-data:
+    name: viewer-service_viewer-data
+  postgres-storage-data:
+    name: compose_postgres-storage-data
+  mysql-storage-data:
+    name: compose_mysql-storage-data

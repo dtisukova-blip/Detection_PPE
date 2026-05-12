@@ -1,0 +1,18 @@
+services:
+  viewer-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ppe-viewer-service
+    network_mode: host
+    environment:
+      VIEWER_DB: /data/viewer.db
+      VIEWER_PKI_DIR: /data/pki
+      VIEWER_SERVICE_ID: ${VIEWER_SERVICE_ID:-viewer-01}
+      VIEWER_LOCAL_URL: ${VIEWER_LOCAL_URL:-}
+    volumes:
+      - viewer-data:/data
+    restart: unless-stopped
+
+volumes:
+  viewer-data:

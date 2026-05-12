@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PPE Storage Service</title>
+    <link rel="stylesheet" href="/static/app.css?v=2" />
+  </head>
+  <body>
+    <div id="toast-stack" class="toast-stack"></div>
+
+    <section id="bootstrap-screen" class="screen active">
+      <div class="topbar"><div><p class="eyebrow">PPE Storage Service</p><h1>Привязка к Control Center</h1></div></div>
+      <main class="tab-shell"><div class="layout"><section class="panel span-6">
+        <div class="panel-header"><h2>Подключение к координатору</h2></div>
+        <form id="bootstrap-form" class="form-grid">
+          <label><span>Control Center URL</span><input id="bootstrap-cc-url" type="text" placeholder="https://control-center.tailnet:8000" required /></label>
+          <label><span>Control Center Runtime URL</span><input id="bootstrap-runtime-url" type="text" placeholder="https://control-center.tailnet:8443" /></label>
+          <label><span>Service ID</span><input id="bootstrap-service-id" type="text" required /></label>
+          <label><span>Service Secret</span><input id="bootstrap-service-secret" type="password" required /></label>
+          <label><span>Local URL</span><input id="bootstrap-local-url" type="text" placeholder="https://storage-01.tailnet:8040" required /></label>
+          <p class="muted">Укажите реальные адреса сервиса и координатора, достижимые между машинами. Не полагайтесь на docker service names.</p>
+          <button type="submit">Сохранить и продолжить</button>
+          <p id="bootstrap-success" class="success hidden"></p>
+          <p id="bootstrap-error" class="error hidden"></p>
+        </form>
+      </section></div></main>
+    </section>
+
+    <section id="login-screen" class="screen">
+      <div class="topbar"><div><p class="eyebrow">PPE Storage Service</p><h1>Аутентификация оператора</h1></div></div>
+      <main class="tab-shell"><div class="layout"><section class="panel span-6">
+        <div class="panel-header"><h2>Вход через Control Center</h2></div>
+        <form id="login-form" class="form-grid">
+          <label><span>Username</span><input id="login-username" type="text" required /></label>
+          <label><span>Password</span><input id="login-password" type="password" required /></label>
+          <p id="login-info" class="success hidden"></p>
+          <button type="submit">Войти</button>
+          <p id="login-error" class="error hidden"></p>
+        </form>
+      </section></div></main>
+    </section>
+
+    <section id="dashboard-screen" class="screen">
+      <div class="topbar">
+        <div><p class="eyebrow">PPE Storage Service</p><h1>Рабочая консоль</h1></div>
+        <div class="topbar-actions"><div id="current-user" class="kv-item"></div><button id="refresh-button" class="secondary" type="button">Обновить</button><button id="logout-button" class="secondary" type="button">Выйти</button></div>
+      </div>
+      <nav class="tabs-bar"><div class="tabs">
+        <button class="tab-button active" data-tab="overview" type="button">Обзор</button>
+        <button class="tab-button" data-tab="registration" type="button">Регистрация сервиса</button>
+        <button class="tab-button" data-tab="auth" type="button">Аутентификация</button>
+        <button class="tab-button" data-tab="settings" type="button">Настройки</button>
+        <button class="tab-button" data-tab="deliveries" type="button">Доставка</button>
+        <button class="tab-button" data-tab="audit" type="button">Журнал</button>
+      </div></nav>
+      <main class="tab-shell">
+        <section class="tab-panel active" data-panel="overview"><div class="layout">
+          <section class="panel span-5"><div class="panel-header"><h2>Состояние</h2></div><div id="overview-state" class="kv-list"></div></section>
+          <section class="panel span-7"><div class="panel-header"><h2>Сессия оператора</h2></div><div id="session-state" class="kv-list"></div></section>
+          <section class="panel span-12"><div class="panel-header"><h2>Эффективные настройки</h2></div><pre id="effective-settings" class="json-block"></pre></section>
+        </div></section>
+        <section class="tab-panel" data-panel="registration"><div class="layout">
+          <section class="panel span-6"><div class="panel-header"><h2>Подключение и регистрация</h2></div><form id="control-center-form" class="form-grid">
+            <label><span>Control Center URL</span><input id="cc-url" type="text" placeholder="https://control-center.tailnet:8000" /></label>
+            <label><span>Control Center Runtime URL</span><input id="cc-runtime-url" type="text" placeholder="https://control-center.tailnet:8443" /></label>
+            <label><span>Service ID</span><input id="service-id" type="text" /></label>
+            <label><span>Service Secret</span><input id="service-secret" type="password" placeholder="Оставьте пустым, чтобы не менять" /></label>
+            <label><span>Local URL</span><input id="local-url" type="text" placeholder="https://storage-01.tailnet:8040" /></label>
+            <div class="inline-actions"><button type="submit">Сохранить</button><button id="register-button" type="button">Повторить регистрацию</button></div>
+            <p class="muted">После сохранения сервис сам пытается связаться с координатором и зарегистрироваться.</p>
+            <p id="control-center-success" class="success hidden"></p><p id="control-center-error" class="error hidden"></p>
+          </form></section>
+          <section class="panel span-6"><div class="panel-header"><h2>Последняя попытка</h2></div><div id="registration-state" class="kv-list"></div></section>
+          <section class="panel span-12">
+            <div class="panel-header"><h2>TLS и сертификат сервиса</h2></div>
+            <div id="tls-state" class="kv-list"></div>
+            <div class="inline-actions"><button id="tls-enroll-button" type="button">Выпустить cert</button><button id="tls-renew-button" class="secondary" type="button">Перевыпустить cert</button></div>
+            <p id="tls-success" class="success hidden"></p><p id="tls-error" class="error hidden"></p>
+          </section>
+        </div></section>
+        <section class="tab-panel" data-panel="auth"><div class="layout"><section class="panel span-6"><div class="panel-header"><h2>Текущая аутентификация</h2></div><div id="auth-state" class="kv-list"></div></section></div></section>
+        <section class="tab-panel" data-panel="settings"><div class="layout"><section class="panel span-6"><div class="panel-header"><h2>Предложить настройки</h2></div><form id="settings-form" class="form-grid">
+          <label><span>Settings JSON</span><textarea id="settings-json" rows="12"></textarea></label><button type="submit">Отправить в Control Center</button><p id="settings-success" class="success hidden"></p><p id="settings-error" class="error hidden"></p>
+        </form></section></div></section>
+        <section class="tab-panel" data-panel="deliveries"><div class="layout"><section class="panel span-12"><div class="panel-header"><h2>История доставок</h2></div><div id="delivery-history" class="scroll-region card-list"></div></section></div></section>
+        <section class="tab-panel" data-panel="audit"><div class="layout"><section class="panel span-12"><div class="panel-header"><h2>Журнал действий сервиса</h2></div><div id="event-history" class="scroll-region card-list"></div></section></div></section>
+      </main>
+    </section>
+    <script src="/static/app.js?v=2"></script>
+  </body>
+</html>

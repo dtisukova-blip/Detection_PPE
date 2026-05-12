@@ -1,0 +1,18 @@
+services:
+  checkpoint-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ppe-checkpoint-agent
+    network_mode: host
+    environment:
+      CHECKPOINT_DB: /data/checkpoint.db
+      CHECKPOINT_PKI_DIR: /data/pki
+      CHECKPOINT_SERVICE_ID: ${CHECKPOINT_SERVICE_ID:-checkpoint-01}
+      CHECKPOINT_LOCAL_URL: ${CHECKPOINT_LOCAL_URL:-}
+    volumes:
+      - checkpoint-data:/data
+    restart: unless-stopped
+
+volumes:
+  checkpoint-data:

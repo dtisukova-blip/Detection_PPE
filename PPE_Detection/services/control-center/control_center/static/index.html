@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Control Center</title>
+    <link rel="stylesheet" href="/static/app.css?v=11" />
+  </head>
+  <body>
+    <div id="app">
+      <section id="login-screen" class="screen active">
+        <div class="shell shell-login">
+          <div class="hero">
+            <p class="eyebrow">PPE Control Center</p>
+            <h1>Консоль аутентификации</h1>
+            <p class="subtitle">
+              Управление пользователями, сервисами и правами доступа для экосистемы контроля СИЗ.
+            </p>
+          </div>
+          <form id="login-form" class="panel form-grid">
+            <h2>Вход</h2>
+            <label>
+              <span>Логин</span>
+              <input id="login-username" name="username" type="text" autocomplete="username" required />
+            </label>
+            <label>
+              <span>Пароль</span>
+              <input id="login-password" name="password" type="password" autocomplete="current-password" required />
+            </label>
+            <button type="submit">Войти</button>
+            <p id="login-error" class="error hidden"></p>
+          </form>
+        </div>
+      </section>
+
+      <section id="dashboard-screen" class="screen">
+        <div class="topbar">
+          <div>
+            <p class="eyebrow">Control Center</p>
+            <h1>Operator Console</h1>
+          </div>
+          <div class="topbar-actions">
+            <div id="current-user" class="identity"></div>
+            <button id="refresh-button" class="secondary" type="button">Обновить</button>
+            <button id="logout-button" class="secondary" type="button">Выйти</button>
+          </div>
+        </div>
+
+        <nav class="tabs-bar">
+          <div class="tabs" role="tablist" aria-label="Control Center Sections">
+            <button class="tab-button active" type="button" data-tab="overview">Обзор</button>
+            <button class="tab-button" type="button" data-tab="services">Сервисы</button>
+            <button class="tab-button" type="button" data-tab="routes">Маршруты</button>
+            <button class="tab-button root-only hidden" type="button" data-tab="users">Пользователи</button>
+            <button class="tab-button" type="button" data-tab="audit">Аудит</button>
+            <button class="tab-button" type="button" data-tab="runtime-events">Runtime события</button>
+          </div>
+        </nav>
+
+        <main class="tab-shell">
+          <section class="tab-panel active" data-panel="overview">
+            <div class="layout layout-overview">
+              <section class="panel panel-profile">
+                <div class="panel-header">
+                  <h2>Профиль</h2>
+                </div>
+                <div id="profile-summary" class="kv-list"></div>
+              </section>
+            </div>
+          </section>
+
+          <section class="tab-panel" data-panel="services">
+            <div class="layout layout-services">
+              <section class="panel panel-services">
+                <div class="panel-header">
+                  <h2>Сервисы</h2>
+                </div>
+                <div id="service-list" class="service-list scroll-region"></div>
+              </section>
+
+              <section id="root-service-panel" class="panel hidden">
+                <div class="panel-header">
+                  <h2>Регистрация сервиса</h2>
+                </div>
+                <form id="create-service-form" class="form-grid compact">
+                  <label>
+                    <span>Service ID</span>
+                    <input id="new-service-id" type="text" required />
+                  </label>
+                  <label>
+                    <span>Type</span>
+                    <select id="new-service-type">
+                      <option value="checkpoint">checkpoint</option>
+                      <option value="worker">worker</option>
+                      <option value="storage">storage</option>
+                      <option value="delivery_service">delivery_service</option>
+                      <option value="viewer">viewer</option>
+                    </select>
+                  </label>
+                  <label>
+                    <span>Display Name</span>
+                    <input id="new-service-name" type="text" required />
+                  </label>
+                  <label>
+                    <span>Settings JSON</span>
+                    <textarea id="new-service-settings" rows="7">{}</textarea>
+                  </label>
+                  <button type="submit">Зарегистрировать</button>
+                  <div class="inline-actions">
+                    <button id="download-root-cert-button" class="secondary" type="button">Скачать Root CA</button>
+                  </div>
+                  <p id="create-service-error" class="error hidden"></p>
+                </form>
+                <div id="service-provisioning-result" class="kv-item hidden">
+                  <strong>Bootstrap credentials</strong>
+                  <pre id="service-provisioning-json" class="json-block"></pre>
+                </div>
+              </section>
+            </div>
+          </section>
+
+          <section class="tab-panel" data-panel="routes">
+            <div class="layout layout-routes">
+              <section class="panel panel-routes">
+                <div class="panel-header">
+                  <h2>Маршруты</h2>
+                </div>
+                <div id="route-list" class="route-list scroll-region"></div>
+              </section>
+
+              <section id="root-route-panel" class="panel hidden">
+                <div class="panel-header">
+                  <h2>Создать маршрут</h2>
+                </div>
+                <form id="create-route-form" class="form-grid compact">
+                  <label>
+                    <span>Route ID</span>
+                    <input id="new-route-id" type="text" required />
+                  </label>
+                  <label>
+                    <span>Name</span>
+                    <input id="new-route-name" type="text" required />
+                  </label>
+                  <label>
+                    <span>Checkpoint Service ID</span>
+                    <select id="new-route-checkpoint"></select>
+                  </label>
+                  <label>
+                    <span>Worker Service ID</span>
+                    <select id="new-route-worker" required></select>
+                  </label>
+                  <label class="hidden">
+                    <span>Priority</span>
+                    <input id="new-route-priority" type="number" value="100" min="0" />
+                  </label>
+                  <label class="hidden">
+                    <span>Default Route</span>
+                    <select id="new-route-default">
+                      <option value="false">false</option>
+                      <option value="true">true</option>
+                    </select>
+                  </label>
+                  <label>
+                    <span>Active</span>
+                    <select id="new-route-active">
+                      <option value="true">true</option>
+                      <option value="false">false</option>
+                    </select>
+                  </label>
+                  <div id="new-route-targets-form" class="settings-form"></div>
+                  <label class="checkbox-row">
+                    <input id="new-route-targets-expert" type="checkbox" />
+                    <span>Экспертный JSON targets</span>
+                  </label>
+                  <label id="new-route-targets-json-wrap" class="hidden">
+                    <span>Targets JSON</span>
+                    <textarea id="new-route-targets" rows="10">[
+  {
+    "target_service_id": "storage-01",
+    "target_kind": "database",
+    "is_required": true,
+    "order_index": 10,
+    "filter": {}
+  },
+  {
+    "target_service_id": "delivery-01",
+    "target_kind": "webhook",
+    "is_required": false,
+    "order_index": 20,
+    "filter": {}
+  },
+  {
+    "target_service_id": "viewer-01",
+    "target_kind": "viewer",
+    "is_required": false,
+    "order_index": 40,
+    "filter": {}
+  }
+]</textarea>
+                  </label>
+                  <button type="submit">Создать маршрут</button>
+                  <p id="create-route-error" class="error hidden"></p>
+                </form>
+              </section>
+            </div>
+          </section>
+
+          <section class="tab-panel" data-panel="users">
+            <div class="layout layout-users">
+              <section id="root-user-panel" class="panel hidden">
+                <div class="panel-header">
+                  <h2>Пользователи</h2>
+                </div>
+                <div id="user-list" class="user-list scroll-region"></div>
+              </section>
+
+              <section class="panel hidden root-only" id="root-user-create-panel">
+                <form id="create-user-form" class="form-grid compact">
+                  <h3>Создать пользователя</h3>
+                  <label>
+                    <span>Username</span>
+                    <input id="new-user-username" type="text" required />
+                  </label>
+                  <label>
+                    <span>Password</span>
+                    <input id="new-user-password" type="password" required />
+                  </label>
+                  <label>
+                    <span>Роль</span>
+                    <select id="new-user-role">
+                      <option value="admin">Администратор сервисов</option>
+                      <option value="auditor">Инженер по промышленной безопасности</option>
+                    </select>
+                  </label>
+                  <button type="submit">Создать</button>
+                  <p id="create-user-error" class="error hidden"></p>
+                </form>
+              </section>
+
+              <section id="root-grant-panel" class="panel hidden">
+                <div class="panel-header">
+                  <h2>Привязка сервисов</h2>
+                </div>
+                <form id="grant-access-form" class="form-grid compact">
+                  <label>
+                    <span>Username</span>
+                    <input id="grant-username" type="text" required />
+                  </label>
+                  <label>
+                    <span>Service ID</span>
+                    <input id="grant-service-id" type="text" required />
+                  </label>
+                  <div class="muted">Права на действия определяются ролью пользователя. Эта форма только привязывает сервис к пользователю.</div>
+                  <button type="submit">Привязать сервис</button>
+                  <p id="grant-access-error" class="error hidden"></p>
+                </form>
+              </section>
+            </div>
+          </section>
+
+          <section class="tab-panel" data-panel="audit">
+            <div class="layout layout-audit">
+              <section class="panel panel-audit">
+                <div class="panel-header">
+                  <h2>Аудит</h2>
+                </div>
+                <div class="filter-row">
+                  <input id="audit-filter-target" type="text" placeholder="target id" />
+                  <input id="audit-filter-action" type="text" placeholder="action" />
+                  <button id="audit-filter-apply" class="secondary" type="button">Фильтр</button>
+                </div>
+                <div id="audit-list" class="audit-list scroll-region"></div>
+              </section>
+            </div>
+          </section>
+
+          <section class="tab-panel" data-panel="runtime-events">
+            <div class="layout layout-runtime-events">
+              <section class="panel panel-runtime-events">
+                <div class="panel-header">
+                  <h2>Runtime события</h2>
+                </div>
+                <div class="filter-row">
+                  <input id="runtime-filter-request" type="text" placeholder="request id" />
+                  <input id="runtime-filter-service" type="text" placeholder="service id" />
+                  <select id="runtime-filter-severity">
+                    <option value="">severity</option>
+                    <option value="info">info</option>
+                    <option value="warn">warn</option>
+                    <option value="error">error</option>
+                  </select>
+                  <button id="runtime-filter-apply" class="secondary" type="button">Фильтр</button>
+                </div>
+                <div id="runtime-event-list" class="runtime-event-list scroll-region"></div>
+              </section>
+            </div>
+          </section>
+        </main>
+      </section>
+
+      <div id="service-modal" class="modal-backdrop hidden">
+        <section class="modal">
+          <div class="panel modal-panel">
+            <div class="panel-header">
+              <h2>Редактирование сервиса</h2>
+              <button id="close-service-modal" class="secondary" type="button">Закрыть</button>
+            </div>
+            <form id="service-update-form" class="form-grid">
+              <label>
+                <span>Service ID</span>
+                <input id="service-update-id" type="text" readonly />
+              </label>
+              <label>
+                <span>Display Name</span>
+                <input id="service-update-name" type="text" />
+              </label>
+              <label>
+                <span>Режим взаимодействия</span>
+                <select id="service-update-status">
+                  <option value="active">active</option>
+                  <option value="disabled">disabled</option>
+                </select>
+              </label>
+              <div class="muted">
+                Этот параметр управляет тем, разрешено ли сервису работать с control center. Живое состояние
+                сервиса отображается отдельно по keep-alive.
+              </div>
+              <div id="service-settings-form" class="settings-form"></div>
+              <label>
+                <span>Режим настроек</span>
+                <select id="service-settings-mode">
+                  <option value="form">Форма</option>
+                  <option value="template">Шаблон</option>
+                  <option value="json">Экспертный JSON</option>
+                </select>
+              </label>
+              <div id="service-settings-template-wrap" class="hidden">
+                <label>
+                  <span>Шаблон</span>
+                  <select id="service-settings-template"></select>
+                </label>
+              </div>
+              <label id="service-settings-json-wrap" class="hidden">
+                <span>Settings JSON</span>
+                <textarea id="service-update-settings" rows="10"></textarea>
+              </label>
+              <div class="inline-actions">
+                <button type="submit">Сохранить</button>
+                <button id="delete-service-button" class="secondary" type="button">Удалить сервис</button>
+              </div>
+              <p id="service-update-error" class="error hidden"></p>
+            </form>
+          </div>
+        </section>
+      </div>
+
+      <div id="user-modal" class="modal-backdrop hidden">
+        <section class="modal">
+          <div class="panel modal-panel">
+            <div class="panel-header">
+              <h2>Редактировать пользователя</h2>
+              <button id="close-user-modal" class="secondary" type="button">Закрыть</button>
+            </div>
+            <form id="update-user-form" class="form-grid compact">
+              <label>
+                <span>Username</span>
+                <input id="edit-user-username" type="text" readonly />
+              </label>
+              <label>
+                <span>Роль</span>
+                <select id="edit-user-role">
+                  <option value="admin">Администратор сервисов</option>
+                  <option value="auditor">Инженер по промышленной безопасности</option>
+                  <option value="root">Администратор</option>
+                </select>
+              </label>
+              <label>
+                <span>Status</span>
+                <select id="edit-user-active">
+                  <option value="true">active</option>
+                  <option value="false">disabled</option>
+                </select>
+              </label>
+              <label>
+                <span>New Password</span>
+                <input id="edit-user-password" type="password" placeholder="Оставьте пустым, чтобы не менять" />
+              </label>
+              <div class="inline-actions">
+                <button type="submit">Сохранить</button>
+                <button id="delete-user-button" class="secondary" type="button">Удалить</button>
+              </div>
+              <p id="update-user-error" class="error hidden"></p>
+            </form>
+          </div>
+        </section>
+      </div>
+
+      <div id="route-modal" class="modal-backdrop hidden">
+        <section class="modal">
+          <div class="panel modal-panel">
+            <div class="panel-header">
+              <h2>Редактирование маршрута</h2>
+              <button id="close-route-modal" class="secondary" type="button">Закрыть</button>
+            </div>
+            <form id="route-update-form" class="form-grid compact">
+              <label>
+                <span>Route ID</span>
+                <input id="route-update-id" type="text" readonly />
+              </label>
+              <label>
+                <span>Name</span>
+                <input id="route-update-name" type="text" />
+              </label>
+              <label>
+                <span>Checkpoint Service ID</span>
+                <select id="route-update-checkpoint"></select>
+              </label>
+              <label>
+                <span>Worker Service ID</span>
+                <select id="route-update-worker"></select>
+              </label>
+              <label class="hidden">
+                <span>Priority</span>
+                <input id="route-update-priority" type="number" min="0" />
+              </label>
+              <label class="hidden">
+                <span>Default Route</span>
+                <select id="route-update-default">
+                  <option value="false">false</option>
+                  <option value="true">true</option>
+                </select>
+              </label>
+              <label>
+                <span>Active</span>
+                <select id="route-update-active">
+                  <option value="true">true</option>
+                  <option value="false">false</option>
+                </select>
+              </label>
+              <div id="route-update-targets-form" class="settings-form"></div>
+              <label class="checkbox-row">
+                <input id="route-update-targets-expert" type="checkbox" />
+                <span>Экспертный JSON targets</span>
+              </label>
+              <label id="route-update-targets-json-wrap" class="hidden">
+                <span>Targets JSON</span>
+                <textarea id="route-update-targets" rows="12"></textarea>
+              </label>
+              <div class="inline-actions">
+                <button type="submit">Сохранить</button>
+                <button id="delete-route-button" class="secondary" type="button">Удалить маршрут</button>
+              </div>
+              <p id="route-update-error" class="error hidden"></p>
+            </form>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <script src="/static/app.js?v=16"></script>
+  </body>
+</html>
